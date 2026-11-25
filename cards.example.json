@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "id": "K-0001",
+      "tiketti": null,
+      "otsikko": "Esimerkki: README:n asennusohje ajan tasalle",
+      "muutos": "Lue README.md ja package.json. Päivitä README:n Asennus-osio vastaamaan nykyisiä npm-skriptejä. Älä muuta muita osioita.",
+      "done": "README:n asennusohjeen komennot löytyvät package.jsonista ja toimivat sellaisinaan; muut osiot ennallaan; ei committia.",
+      "tiedostot": ["README.md"],
+      "testit": ["git diff --check"],
+      "readonly": false,
+      "ui": false,
+      "base": "main",
+      "haara": "feature/k-0001-readme",
+      "konteksti": null,
+      "tila": "todo",
+      "paatokset": [],
+      "historia": []
+    }
+  ]
+}

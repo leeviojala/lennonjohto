@@ -1,0 +1,39 @@
+# Lennonjohdon asetukset. Kopioi tiedostoksi lennonjohto.conf ja muokkaa.
+# Skriptit lukevat tämän tiedoston taulun hakemistosta.
+
+# Koodirepo, jossa kortit toteutetaan (jokainen kortti saa oman git worktreen)
+REPO="$HOME/projekti"
+
+# Worktree-hakemiston etuliite: kortin K-0001 työpuu on "${WT_PREFIX}K-0001"
+WT_PREFIX="$HOME/projekti-wt-"
+
+# Haara, josta uudet kortit haarautuvat (origin/<BASE_BRANCH>)
+BASE_BRANCH="main"
+
+# Uuden haaran nimi, jos kortilla ei ole omaa haara-kenttää: <BRANCH_PREFIX><tiketti>-<kortin id>
+BRANCH_PREFIX="feature/"
+
+# Sinun nimesi taululla ("Odottaa: <OWNER_NAME>")
+OWNER_NAME="minä"
+
+# Testikomento, jos kortilla ei ole omaa testit-listaa (ajetaan worktreen juuresta)
+DEFAULT_TEST="git diff --check"
+
+# Mallit: toteuttaja ja katselmoija (claude --model -aliakset). Ympäristömuuttujat CARD_MODEL ja
+# CARD_REVIEW_MODEL ohittavat nämä yksittäisessä ajossa.
+IMPL_MODEL="sonnet"
+REVIEW_MODEL="opus"
+
+# claude-binääri; tyhjä = PATHista
+CLAUDE_BIN=""
+
+# Lisäpolut PATHin alkuun (esim. tietty Node-versio nvm:stä); tyhjä = ei lisäyksiä
+EXTRA_PATH=""
+
+# PR-tilan synkka (board.sh --sync): github | azure | none
+PR_PROVIDER="github"
+
+# Azure DevOps (vain kun PR_PROVIDER=azure): organisaation URL, projekti ja repo
+AZ_ORG_URL="https://dev.azure.com/organisaatio"
+AZ_PROJECT="projekti"
+AZ_REPO="repo"

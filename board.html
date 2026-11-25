@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lennonjohto</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --col: #e9ebef; --card: #ffffff; --text: #1d2330; --muted: #5d6675; --line: #d7dbe2;
+    --todo: #8a93a3; --build: #2f7de1; --review: #7a5af8; --test: #0e9f6e; --blocked: #d7263d; --pr: #e58a00; --hold: #9aa3b2; --valmis: #3c9d57;
+    --omistaja-bg: #fff4e0; --omistaja-line: #e58a00; --kats-bg: #eef5ff;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #14181f; --col: #1c2230; --card: #242b3a; --text: #e8ecf3; --muted: #9aa5b8; --line: #353d4e;
+    --omistaja-bg: #3a2c12; --kats-bg: #1d2a40;
+  } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; }
+  header .meta { color: var(--muted); font-size: 12px; }
+  header label { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 1fr); gap: 12px; padding: 12px 16px; overflow-x: auto; min-height: calc(100vh - 50px); }
+  .col { background: var(--col); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .col h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 4px; display: flex; justify-content: space-between; color: var(--muted); }
+  .col h2 .n { background: var(--card); border-radius: 10px; padding: 0 8px; font-weight: 600; }
+  .card { background: var(--card); border-radius: 8px; padding: 10px 12px; border-left: 5px solid var(--todo); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .card.odottaa-omistaja { background: var(--omistaja-bg); border-left-color: var(--omistaja-line); box-shadow: 0 0 0 2px var(--omistaja-line) inset, 0 1px 2px rgba(0,0,0,.08); }
+  .card.odottaa-katselmoija { background: var(--kats-bg); }
+  .card .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .card .id { font-weight: 700; font-size: 12px; color: var(--muted); }
+  .card .tiketti a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
+  .card .title { font-weight: 600; margin-bottom: 6px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; color: #fff; text-transform: uppercase; letter-spacing: .03em; }
+  .badge.todo { background: var(--todo); } .badge.build { background: var(--build); } .badge.review { background: var(--review); }
+  .badge.test { background: var(--test); } .badge.blocked { background: var(--blocked); } .badge.pr { background: var(--pr); }
+  .badge.hold { background: var(--hold); } .badge.valmis { background: var(--valmis); }
+  .wait { margin: 6px 0; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 13px; }
+  .wait.omistaja { background: var(--omistaja-line); color: #fff; }
+  .wait.katselmoija { background: #2f7de1; color: #fff; }
+  .wait.muu { background: var(--col); color: var(--text); font-weight: 500; }
+  .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--build); margin-right: 6px; animation: pulse 1.2s infinite; vertical-align: middle; }
+  @keyframes pulse { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+  .row { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .row a { color: inherit; }
+  .paatos { margin-top: 6px; padding: 6px 8px; border-left: 3px solid var(--blocked); background: var(--col); font-size: 12px; border-radius: 4px; }
+  .paatos b { color: var(--blocked); }
+  details summary { cursor: pointer; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .hist { font-size: 11px; color: var(--muted); margin: 4px 0 0; padding-left: 14px; }
+  .kuvat { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .kuvat .otsikot { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kuvat figure { margin: 0; }
+  .kuvat img { width: 100%; max-height: 140px; object-fit: cover; object-position: top; border: 1px solid var(--line); border-radius: 4px; cursor: zoom-in; background: #fff; }
+  .kuvat figcaption { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .kuvat .puuttuu { display: flex; align-items: center; justify-content: center; height: 140px; border: 1px dashed var(--line); border-radius: 4px; font-size: 11px; color: var(--muted); }
+  #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: flex-start; justify-content: center; overflow: auto; z-index: 10; padding: 20px; cursor: zoom-out; }
+  #lightbox img { max-width: 100%; background: #fff; }
+  #lightbox.open { display: flex; }
+  .empty { color: var(--muted); font-size: 12px; font-style: italic; padding: 6px; }
+  @media (max-width: 700px) { .board { grid-auto-flow: row; grid-auto-columns: auto; min-height: auto; } header { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lennonjohto</h1>
+  <span class="meta" id="meta">ladataan…</span>
+  <label><input type="checkbox" id="showValmis"> näytä valmiit</label>
+</header>
+<div class="board" id="board"></div>
+<div id="lightbox" onclick="this.classList.remove('open')"><img id="lightbox-img" alt=""></div>
+<script>
+const COLS = [
+  { key: "omistaja",  title: "Odottaa sinua",       match: c => (c.tila === "pr" && c.odottaa === "omistaja") || c.tila === "blocked" },
+  { key: "tyo",       title: "Agentti työstää",     match: c => ["build","review","test"].includes(c.tila) },
+  { key: "pr",        title: "PR, odottaa katselmoijaa", match: c => c.tila === "pr" && c.odottaa !== "omistaja" },
+  { key: "todo",      title: "Jonossa / hold",      match: c => c.tila === "todo" || c.tila === "hold" },
+  { key: "valmis",    title: "Valmis",              match: c => c.tila === "valmis", hidden: true },
+];
+const TILA_FI = { todo: "jonossa", build: "toteuttaja", review: "katselmoija", test: "testit", blocked: "blokattu", pr: "PR", hold: "hold", valmis: "valmis" };
+// config.json kirjoitetaan board.sh --web -ajossa lennonjohto.confin perusteella
+let CFG = { owner: "minä", pr_url: "", ticket_url: "" };
+const link = (base, id, text) => base ? `<a href="${base}${id}" target="_blank">${text}</a>` : text;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const fmt = ts => ts ? ts.replace("T", " ").slice(5, 16) : "";
+const rel = ts => { if (!ts) return ""; const m = Math.round((Date.now() - new Date(ts)) / 60000); return m < 60 ? `${m} min sitten` : m < 1440 ? `${Math.round(m/60)} h sitten` : `${Math.round(m/1440)} vrk sitten`; };
+
+function waitText(c) {
+  const last = (c.historia || []).slice(-1)[0] || {};
+  if (c.tila === "pr") return c.odottaa === "omistaja"
+    ? { cls: "omistaja", text: `Odottaa ${CFG.owner}: ` + (c.odottaa_syy || last.huomio || "commit-lupa / katselmoija / merge") }
+    : { cls: "katselmoija", text: "Odottaa katselmoijaa: " + (c.odottaa_syy || (c.pr ? `PR ${c.pr}` : "")) };
+  if (c.tila === "blocked") return { cls: "omistaja", text: "Blokattu: " + (last.huomio || "") };
+  if (["build","review","test"].includes(c.tila)) return { cls: "muu", text: `<span class="pulse"></span>${TILA_FI[c.tila]} ajaa (${rel(last.aika)})` };
+  if (c.tila === "hold") return { cls: "muu", text: "Holdissa: " + (last.huomio || "") };
+  if (c.tila === "todo") return { cls: "muu", text: "Jonossa, ei käynnistetty" };
+  return null;
+}
+
+function card(c) {
+  const w = waitText(c);
+  const rounds = (c.kierrokset || []).length;
+  const last = (c.historia || []).slice(-1)[0] || {};
+  const cur = rounds ? c.kierrokset[rounds - 1] : null;
+  const cls = ["card", c.tila === "pr" && c.odottaa === "omistaja" || c.tila === "blocked" ? "odottaa-omistaja" : "", c.tila === "pr" && c.odottaa !== "omistaja" ? "odottaa-katselmoija" : ""].join(" ");
+  return `<div class="${cls}">
+    <div class="top"><span class="id">${esc(c.id)}${c.tiketti ? ` · <span class="tiketti">${link(CFG.ticket_url, c.tiketti, "#" + esc(c.tiketti))}</span>` : ""}</span><span class="badge ${esc(c.tila)}">${esc(TILA_FI[c.tila] || c.tila)}</span></div>
+    <div class="title">${esc(c.otsikko)}</div>
+    ${w ? `<div class="wait ${w.cls}">${w.text}</div>` : ""}
+    ${c.pr ? `<div class="row">PR ${link(CFG.pr_url, c.pr, esc(c.pr))}${c.haara ? ` · ${esc(c.haara)}` : ""}</div>` : ""}
+    ${cur ? `<div class="row">Kierros ${cur.nro}/${rounds + 1}: ${esc(cur.otsikko)}</div>` : ""}
+    ${(c.paatokset || []).map(p => `<div class="paatos"><b>Päätettävää:</b> ${esc(p)}</div>`).join("")}
+    ${c.ui && !(c.kuvat || []).length ? `<div class="row">UI-muutos: ennen/jälkeen-kuvat puuttuvat vielä</div>` : ""}
+    ${(c.kuvat || []).length ? `<details><summary>kuvat ennen / jälkeen (${c.kuvat.length})</summary><div class="kuvat"><div class="otsikot"><span>ennen</span><span>jälkeen</span></div>${c.kuvat.map(k => `
+      ${k.ennen ? `<figure><img loading="lazy" src="${esc(k.ennen)}" alt="${esc(k.nimi)} ennen" onclick="zoom(this.src)"><figcaption>${esc(k.nimi)}</figcaption></figure>` : `<div class="puuttuu">ei ennen-kuvaa</div>`}
+      ${k.jalkeen ? `<figure><img loading="lazy" src="${esc(k.jalkeen)}" alt="${esc(k.nimi)} jälkeen" onclick="zoom(this.src)"><figcaption>${esc(k.selite || "")}</figcaption></figure>` : `<div class="puuttuu">jälkeen puuttuu</div>`}`).join("")}</div></details>` : ""}
+    <div class="row">${fmt(last.aika)} · ${esc(last.huomio || "")}</div>
+    <details><summary>historia (${(c.historia || []).length})</summary><ul class="hist">${(c.historia || []).slice(-8).reverse().map(h => `<li>${fmt(h.aika)} <b>${esc(h.tila)}</b> ${esc(h.huomio)}</li>`).join("")}</ul></details>
+  </div>`;
+}
+
+function zoom(src) { document.getElementById("lightbox-img").src = src; document.getElementById("lightbox").classList.add("open"); }
+let showValmis = false;
+try { showValmis = localStorage.getItem("showValmis") === "1"; } catch {}
+document.getElementById("showValmis").checked = showValmis;
+document.getElementById("showValmis").addEventListener("change", e => { showValmis = e.target.checked; try { localStorage.setItem("showValmis", showValmis ? "1" : "0"); } catch {} render(); });
+
+let data = { cards: [] };
+function render() {
+  const used = new Set();
+  const html = COLS.filter(col => !col.hidden || showValmis).map(col => {
+    const cards = data.cards.filter(c => !used.has(c.id) && col.match(c));
+    cards.forEach(c => used.add(c.id));
+    cards.sort((a, b) => ((b.historia||[]).slice(-1)[0]?.aika || "").localeCompare((a.historia||[]).slice(-1)[0]?.aika || ""));
+    return `<section class="col"><h2>${col.title}<span class="n">${cards.length}</span></h2>${cards.length ? cards.map(card).join("") : '<div class="empty">ei kortteja</div>'}</section>`;
+  }).join("");
+  document.getElementById("board").innerHTML = html;
+}
+async function load() {
+  try { const rc = await fetch("config.json?t=" + Date.now(), { cache: "no-store" }); if (rc.ok) CFG = { ...CFG, ...(await rc.json()) }; } catch {}
+  try {
+    const r = await fetch("cards.json?t=" + Date.now(), { cache: "no-store" });
+    data = await r.json();
+    document.getElementById("meta").textContent = `${data.cards.length} korttia · päivitetty ${new Date().toLocaleTimeString("fi-FI")} · päivittyy 10 s välein`;
+    render();
+  } catch (e) {
+    document.getElementById("meta").textContent = "cards.json ei latautunut: " + e.message;
+  }
+}
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>
