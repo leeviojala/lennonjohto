@@ -34,6 +34,8 @@ jq -e --arg id "$ID" '.cards[] | select(.id==$id)' "$CARDS" >/dev/null || { echo
 TITLE=$(card .otsikko); MUUTOS=$(card .muutos); DONE=$(card .done)
 FILES=$(card '(.tiedostot // []) | join(", ")'); BASE=$(card ".base // \"$BASE_BRANCH\""); RO=$(card '.readonly // false'); TIK=$(card '.tiketti // ""')
 KONTEKSTI=$(card '.konteksti // ""')
+# Katselmoija saa saman tausta-aineiston (esim. tiketin teksti) absoluuttisena polkuna; ilman sitä se ei voi tarkistaa ehtoja, jotka viittaavat aineistoon
+KONTEKSTI_REVIEW=$(card '.konteksti // ""'); [ -n "$KONTEKSTI_REVIEW" ] && [ -e "$BOARD/$KONTEKSTI_REVIEW" ] && KONTEKSTI_REVIEW="$BOARD/$KONTEKSTI_REVIEW"
 WT=$(card '.worktree // ""'); [ -z "$WT" ] && WT="${WT_PREFIX}$ID"
 
 # Kierrokset: viimeisin kierros on ajettava tehtävä, alkuperäinen muutos/done on taustaa.
@@ -121,12 +123,12 @@ $(cat "$LOG/build.md" 2>/dev/null || echo 'ei raporttia')"
 fi
 REVIEW="Olet riippumaton katselmoija. Et ole kirjoittanut tätä työtä. Tarkista vastaako tuotos TÄSMÄLLEEN tähän valmiusehtoon, ja yritä löytää puute:
 Valmis kun: $DONE$([ "$RO" = "true" ] && echo " (Lukukortti: tuotos alla ON tiedosto ${LOG#$BOARD/}/build.md, skripti on tallentanut sen.)" || true)
-Voit lukea repoa tarkistaaksesi väitteet. Buildia ja testejä et voi ajaa; ajoskripti on ajanut ne ja tulos on alla, luota siihen.
+Voit lukea repoa tarkistaaksesi väitteet.${KONTEKSTI_REVIEW:+ Tausta-aineisto, jota valmiusehto voi koskea (lue se, kun ehto viittaa tikettiin tai aineistoon): $KONTEKSTI_REVIEW} Buildia ja testejä et voi ajaa; ajoskripti on ajanut ne ja tulos on alla, luota siihen.
 $TESTSUMMARY
 Vastaa ensimmäisellä rivillä täsmälleen HYVÄKSYTTY tai HYLÄTTY, sen jälkeen perustelu ja hylätessä lista puutteista.
 --- TUOTOS ---
 $OUTPUT"
-( cd "$WT" && "$CLI" "${REVIEWMODELARG[@]}" -p "$REVIEW" --output-format json --max-turns 80 --allowedTools Read Grep Glob "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" ) > "$LOG/review.json" || true
+( cd "$WT" && "$CLI" "${REVIEWMODELARG[@]}" -p "$REVIEW" --output-format json --max-turns 80 --add-dir "$BOARD/log" --allowedTools Read Grep Glob "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" ) > "$LOG/review.json" || true
 jq -r '.result // "EI TULOSTA"' "$LOG/review.json" > "$LOG/review.md" 2>/dev/null || echo "EI TULOSTA" > "$LOG/review.md"
 VERDICT=$(head -1 "$LOG/review.md" | tr -d ' *')
 [ "${TESTOK:-1}" = 1 ] || VERDICT="TESTIT_KAATUI"

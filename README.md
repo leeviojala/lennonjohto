@@ -88,7 +88,7 @@ Kenttien merkitys:
 - **`readonly: true`** tarkoittaa lukukorttia eli selvitystä. Worktree on irrallinen, ei synny haaraa eikä ajeta testejä, ja raportti on tuotos. Kortti päättyy tilaan `valmis`.
 - **`tyokalut`** korvaa toteuttajan työkalulistan kokonaan, esimerkiksi `["Read","Grep","Glob","Bash(docker:*)"]`. Anna lista aina kokonaisena. Jos kopioit kortin pohjaksi toisesta kortista, tarkista että lista kopioituu mukaan.
 - **`testit`** ajetaan worktreen juuresta yksi kerrallaan. Niiden ohjelmat (esim. `npm`) sallitaan toteuttajalle automaattisesti.
-- **`konteksti`** on taustamateriaali, jonka toteuttaja lukee ensin, esimerkiksi aiemman selvityskortin `log/K-0003/build.md`.
+- **`konteksti`** on taustamateriaali, jonka toteuttaja lukee ensin, esimerkiksi aiemman selvityskortin `log/K-0003/build.md` tai tiketin teksti tiedostona. Katselmoija saa saman aineiston, jotta se voi tarkistaa siihen viittaavat ehdot. Jos agentit eivät pääse lukemaan tikettiä itse, tallenna tiketin teksti `log/<ID>/`-hakemistoon ja anna se tässä.
 - **`paatokset`**: toteuttaja ei kysy, vaan kirjaa epäselvät asiat raportin "Päätettävää"-osioon. Lennonjohto nostaa ne sinulle.
 
 Tilat ja niiden siirtymät:
